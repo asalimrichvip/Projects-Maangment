@@ -116,7 +116,25 @@ $('#notifyBtn').onclick=()=>{if(!window.Notification){alert('المتصفح ده
 let unsubscribeWorkspace=null;
 let seenTaskIds=null,seenIssueIds=null,seenFileIds=null;
 function updateRoleUI(){let admin=isAdmin();$('#usersNavBtn').style.display=admin?'':'none';$('#addInbox').style.display=admin?'':'none';$('#addTask').style.display=admin?'':'none';$('#inboxNavBtn').style.display=admin?'':'none'}
-function checkForNewStuff(){if(isAdmin())return;let myT=myTasks(),myI=myIssues(),myF=data.files.filter(f=>f.direction==='to_user'&&canSeeProject(f.project)&&(!f.toEmail||f.toEmail===currentUser.email));if(seenTaskIds===null){seenTaskIds=new Set(myT.map(t=>t.id));seenIssueIds=new Set(myI.map(i=>i.id));seenFileIds=new Set(myF.map(f=>f.id));return}let newTasks=myT.filter(t=>!seenTaskIds.has(t.id));let newIssues=myI.filter(i=>!seenIssueIds.has(i.id));let newFiles=myF.filter(f=>!seenFileIds.has(f.id));if(newTasks.length)notifyNew('مهمة جديدة',newTasks.map(t=>t.title).join('، '));if(newIssues.length)notifyNew('مشكلة جديدة',newIssues.map(i=>i.text).join('، '));if(newFiles.length)notifyNew('ملف جديد',newFiles.map(f=>f.filename).join('، '));seenTaskIds=new Set(myT.map(t=>t.id));seenIssueIds=new Set(myI.map(i=>i.id));seenFileIds=new Set(myF.map(f=>f.id))}
+function checkForNewStuff(){
+  if(isAdmin()){
+    let incoming=data.files.filter(f=>f.direction==='to_admin');
+    if(seenFileIds===null){seenFileIds=new Set(incoming.map(f=>f.id));return}
+    let newFiles=incoming.filter(f=>!seenFileIds.has(f.id));
+    if(newFiles.length)notifyNew('ملف جديد من عضو',newFiles.map(f=>f.filename+' ('+f.fromEmail+')').join('، '));
+    seenFileIds=new Set(incoming.map(f=>f.id));
+    return;
+  }
+  let myT=myTasks(),myI=myIssues(),myF=data.files.filter(f=>f.direction==='to_user'&&canSeeProject(f.project)&&(!f.toEmail||f.toEmail===currentUser.email));
+  if(seenTaskIds===null){seenTaskIds=new Set(myT.map(t=>t.id));seenIssueIds=new Set(myI.map(i=>i.id));seenFileIds=new Set(myF.map(f=>f.id));return}
+  let newTasks=myT.filter(t=>!seenTaskIds.has(t.id));
+  let newIssues=myI.filter(i=>!seenIssueIds.has(i.id));
+  let newFiles=myF.filter(f=>!seenFileIds.has(f.id));
+  if(newTasks.length)notifyNew('مهمة جديدة',newTasks.map(t=>t.title).join('، '));
+  if(newIssues.length)notifyNew('مشكلة جديدة',newIssues.map(i=>i.text).join('، '));
+  if(newFiles.length)notifyNew('ملف جديد',newFiles.map(f=>f.filename).join('، '));
+  seenTaskIds=new Set(myT.map(t=>t.id));seenIssueIds=new Set(myI.map(i=>i.id));seenFileIds=new Set(myF.map(f=>f.id));
+}
 auth.onAuthStateChanged(async user=>{
   if(user){
     try{
